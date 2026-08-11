@@ -7,16 +7,25 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from langchain_huggingface import HuggingFaceEmbeddings
 
-INDEX_PATH = Path("faiss_index")
+INDEX_PATH = Path(__file__).resolve().parent / "faiss_index"
 
-embeddings = HuggingFaceEmbeddings(
-    model_name="sentence-transformers/all-MiniLM-L6-v2",
-    model_kwargs={"device": "cpu"},
-    encode_kwargs={"normalize_embeddings": False},
-)
+_embeddings = None
+
+
+def _get_embeddings():
+    global _embeddings
+    if _embeddings is None:
+        _embeddings = HuggingFaceEmbeddings(
+            model_name="sentence-transformers/all-MiniLM-L6-v2",
+            model_kwargs={"device": "cpu"},
+            encode_kwargs={"normalize_embeddings": False},
+        )
+    return _embeddings
+
 
 vector_store = None
 retriever = None
+
 
 
 def load_documents_from_source(file_path=None, raw_text=None):
@@ -65,7 +74,7 @@ def ingest_data(file_path=None, raw_text=None):
             "message": "No content could be extracted from the input."
         }
 
-    vector_store = FAISS.from_documents(chunks, embeddings)
+    vector_store = FAISS.from_documents(chunks, _get_embeddings())
     vector_store.save_local(str(INDEX_PATH))
     retriever = vector_store.as_retriever(search_kwargs={"k": 4})
 
@@ -85,7 +94,7 @@ def get_retriever():
     if INDEX_PATH.exists():
         vector_store = FAISS.load_local(
             str(INDEX_PATH),
-            embeddings,
+            _get_embeddings(),
             allow_dangerous_deserialization=True
         )
         retriever = vector_store.as_retriever(search_kwargs={"k": 4})

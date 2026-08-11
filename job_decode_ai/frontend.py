@@ -2,7 +2,7 @@ import os
 import gradio as gr
 import requests
 
-FASTAPI_URL = os.getenv("FASTAPI_URL", "http://127.0.0.1:8001")
+FASTAPI_URL = os.getenv("FASTAPI_URL", "http://127.0.0.1:8000")
 
 CUSTOM_CSS = """
 footer {display: none !important;}

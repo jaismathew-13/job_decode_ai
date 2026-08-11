@@ -49,10 +49,16 @@ def build_chain(file_path=None, raw_text=None, temperature=0.0):
         return {"status": "error", "message": "Retriever could not be initialized."}
 
     groq_api_key = os.getenv("GROQ_API_KEY")
+    if groq_api_key:
+        groq_api_key = groq_api_key.strip()
+        if groq_api_key in ("", "your_groq_api_key_here"):
+            groq_api_key = None
+
+    model_name = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
 
     if ChatGroq is not None and groq_api_key:
         llm = ChatGroq(
-            model="llama-3.3-70b-versatile",
+            model=model_name,
             temperature=temperature,
             api_key=groq_api_key,
         )
@@ -64,6 +70,10 @@ def build_chain(file_path=None, raw_text=None, temperature=0.0):
             | StrOutputParser()
         )
     else:
+        if ChatGroq is None:
+            print("Warning: langchain_groq could not be imported. Running in retrieval-only fallback mode.")
+        else:
+            print("Warning: GROQ_API_KEY is not set or contains the placeholder. Running in retrieval-only fallback mode.")
         rag_chain = None
 
     result["llm_enabled"] = bool(ChatGroq is not None and groq_api_key)

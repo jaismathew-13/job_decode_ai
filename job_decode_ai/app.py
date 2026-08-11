@@ -1,7 +1,9 @@
+from pathlib import Path
 from typing import Optional
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 
 from rag_chain import build_chain, answer_question
@@ -15,7 +17,14 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://127.0.0.1:7861", "http://localhost:7861"],
+    allow_origins=[
+        "http://127.0.0.1:7861",
+        "http://localhost:7861",
+        "http://127.0.0.1:8000",
+        "http://localhost:8000",
+        "http://localhost:3000",
+        "http://localhost:5173",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -32,9 +41,12 @@ class QueryRequest(BaseModel):
     question: str
 
 
-@app.get("/")
+@app.get("/", response_class=HTMLResponse)
 def root():
-    return {"message": "JobDecode AI backend is running", "status": "ok"}
+    index_path = Path(__file__).resolve().parent / "templates" / "index.html"
+    if index_path.exists():
+        return index_path.read_text(encoding="utf-8")
+    return "<h3>JobDecode AI backend is running. Demo templates/index.html not found.</h3>"
 
 
 @app.get("/health")
